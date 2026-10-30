@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Афиша Челябинск: 31 октября – 6 ноября</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --bg-color: #ffffff;
+            --card-bg: #f8f9fa;
+            --text-main: #333;
+            --text-muted: #666;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: transparent;
+            color: var(--text-main);
+        }
+
+        #widgetRoot {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--bg-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .tabs-nav {
+            display: flex;
+            overflow-x: auto;
+            background: #eee;
+            gap: 2px;
+            scrollbar-width: none;
+        }
+        .tabs-nav::-webkit-scrollbar { display: none; }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px 5px;
+            border: none;
+            background: #eee;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .tab-btn.active {
+            background: var(--bg-color);
+            border-bottom: 3px solid var(--accent-color);
+        }
+
+        .tab-btn .date-num { font-weight: bold; font-size: 1.1em; }
+        .tab-btn .day-name { font-size: 0.8em; color: var(--text-muted); text-transform: uppercase; }
+
+        .events-container {
+            padding: 15px;
+            display: flex;
+            flex-direction: column; 
+            gap: 15px;
+            min-height: 550px;
+        }
+
+        .event-card {
+            display: flex;
+            flex-direction: column;
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            border-left: 4px solid var(--primary-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
+        }
+
+        .event-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .category { color: var(--accent-color); font-weight: bold; text-transform: uppercase; }
+        .age-badge { background: #ddd; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+
+        .event-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .event-info-line {
+            font-size: 0.9em;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .detail-card {
+            background: #fff;
+            max-width: 600px;
+            margin: 10px auto;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .detail-desc { line-height: 1.6; margin: 20px 0; color: #444; white-space: pre-wrap; font-size: 1.05em; }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            background: #f0f2f5;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+
+        .info-box strong { display: block; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; font-size: 0.8em; }
+
+        .price-tag {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fff3cd;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            border: 1px solid #ffeeba;
+        }
+
+        .back-btn-container {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .back-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            text-align: center;
+        }
+
+        .back-btn:hover { background: #34495e; }
+    </style>
+</head>
+<body>
+
+<div id="widgetRoot">
+    <div class="tabs-nav" id="tabsNav"></div>
+    <div class="events-container" id="eventsList"></div>
+</div>
+
+<div class="overlay" id="overlay">
+    <div class="detail-card" id="detailCard">
+        <div id="detailContent"></div>
+        <div class="back-btn-container">
+            <button class="back-btn" onclick="closeDetails()">← Назад на афишу</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const events = [
+        // Суббота 31.10
+        { date: '2026-10-31', time: '11:00', age: '0+', cat: 'Фестиваль', title: 'Фестиваль «Городская ботаника»', loc: 'Дом архитектора (пр. Ленина, 41а)', price: 'Вход свободный', desc: 'В Доме архитектора (пр. Ленина, 41а) 31 октября с 11:00 до 18:00 пройдёт фестиваль цветов и мастеров «Городская ботаника». Гостей ждут 40 участников с комнатными и садовыми растениями, авторскими кашпо, макраме и декором ручной работы. В программе — цветообмен, мастер-классы для детей и взрослых, лекции по уходу за растениями, интерактивный квест с розыгрышем призов и фудкорт с глинтвейном и фермерскими продуктами. Вход свободный. 0+' },
+        { date: '2026-10-31', time: '16:00', age: '18+', cat: 'Шоу', title: 'Шоу «Опытный микрофон»', loc: 'Стендап-клуб (пр. Ленина, 66а)', price: '500–600 руб.', desc: 'В Стендап-клубе (пр. Ленина, 66а) 31 октября в 16:00 и 1 ноября в 19:00 — шоу «Опытный микрофон»: опытные комики представят новые шутки и обкатают проверенные. Стоимость билетов — 500–600 руб. 18+' },
+        { date: '2026-10-31', time: '17:00', age: '18+', cat: 'Лекция', title: 'Хэллоуин по-русски: от западной поп-культуры к истокам', loc: 'Кофейня «Кофе и Книги»', price: 'Вход свободный', desc: 'В кофейне «Кофе и Книги» (ул. Красная, 69) 31 октября в 17:00 филолог и лектор Виолетта Вишневецкая прочитает лекцию «Хэллоуин по-русски: от западной поп-культуры к истокам». В программе — история праздника в западной и российской культуре, связь фольклорных монстров с тру-краймом и рассказ о том, что было на Руси вместо Хэллоуина. Знакомство со славянским бестиарием прилагается. Вход свободный. 18+' },
+        { date: '2026-10-31', time: '18:00', age: '12+', cat: 'Опера', title: 'Опера Лео Делиба «Лакме»', loc: 'Оперный театр (пл. Искусств, 1)', price: '800–3 500 руб.', desc: 'В Оперном театре (пл. Искусств, 1) 31 октября и 1 ноября в 18:00 — опера Лео Делиба «Лакме». Трагическая история любви английского офицера и дочери индийского верховного жреца разворачивается в колониальной Индии конца XIX века. Продолжительность — 3,5 часа. Стоимость билетов — 800–3 500 руб. Пушкинская карта. 12+' },
+        { date: '2026-10-31', time: '18:00', age: '18+', cat: 'Спектакль', title: 'Подвальное кабаре «Синяя мышь»', loc: '«Многогранник» (ул. Тимирязева, 12а)', price: '1 200 руб.', desc: 'В пространстве «Многогранник» (ул. Тимирязева, 12а) 31 октября и 1 ноября в 18:00 студия-театр «Манекен» представит спектакль «Подвальное кабаре «Синяя мышь»». Постановка посвящена феномену артистических кабаре Серебряного века — «Бродячей собаке», «Кривому зеркалу» и «Летучей мыши», — где поэты, музыканты и художники искали новые формы и вслух размышляли о судьбе культуры в эпоху потрясений. Стоимость билетов — 1 200 руб. 18+' },
+        { date: '2026-10-31', time: '18:00', age: '18+', cat: 'Вечеринка', title: 'Ночь на Белом', loc: 'Белый рынок (ул. Тернопольская, 6)', price: 'Вход свободный', desc: 'На Белом рынке (ул. Тернопольская, 6) 31 октября с 18:00 до 23:00 пройдёт хэллоуинская вечеринка «Ночь на Белом» в русском народном духе: загадки Бабы Яги, отвар Змея Горыныча, тайны Кощея Бессмертного, игры, интерактивы и живое выступление кавер-группы «Береза Hard». Вход свободный. 18+' },
+
+        // Воскресенье 01.11
+        { date: '2026-11-01', time: '18:00', age: '12+', cat: 'Опера', title: 'Опера Лео Делиба «Лакме»', loc: 'Оперный театр (пл. Искусств, 1)', price: '800–3 500 руб.', desc: 'В Оперном театре (пл. Искусств, 1) 31 октября и 1 ноября в 18:00 — опера Лео Делиба «Лакме». Трагическая история любви английского офицера и дочери индийского верховного жреца разворачивается в колониальной Индии конца XIX века. Продолжительность — 3,5 часа. Стоимость билетов — 800–3 500 руб. Пушкинская карта. 12+' },
+        { date: '2026-11-01', time: '18:00', age: '18+', cat: 'Спектакль', title: 'Подвальное кабаре «Синяя мышь»', loc: '«Многогранник» (ул. Тимирязева, 12а)', price: '1 200 руб.', desc: 'В пространстве «Многогранник» (ул. Тимирязева, 12а) 31 октября и 1 ноября в 18:00 студия-театр «Манекен» представит спектакль «Подвальное кабаре «Синяя мышь»». Постановка посвящена феномену артистических кабаре Серебряного века — «Бродячей собаке», «Кривому зеркалу» и «Летучей мыши», — где поэты, музыканты и художники искали новые формы и вслух размышляли о судьбе культуры в эпоху потрясений. Стоимость билетов — 1 200 руб. 18+' },
+        { date: '2026-11-01', time: '18:00', age: '18+', cat: 'Спектакль', title: 'Ревизор. Бессмертная комедия Гоголя', loc: 'Horse Head (ул. Труда, 91)', price: '1 400–2 400 руб.', desc: 'В пабе-театре Horse Head (ул. Труда, 91) 1 ноября в 18:00 — «Ревизор. Бессмертная комедия Гоголя». Музыкальный спектакль в формате иммерсивного паба: уездный город N, чиновники в панике и столичный хвастун вместо ревизора — всё это разыграется в нескольких метрах от зрителей. Стоимость билетов — 1 400–2 400 руб. 18+' },
+        { date: '2026-11-01', time: '19:00', age: '18+', cat: 'Шоу', title: 'Шоу «Опытный микрофон»', loc: 'Стендап-клуб (пр. Ленина, 66а)', price: '500–600 руб.', desc: 'В Стендап-клубе (пр. Ленина, 66а) 31 октября в 16:00 и 1 ноября в 19:00 — шоу «Опытный микрофон»: опытные комики представият новые шутки и обкатают проверенные. Стоимость билетов — 500–600 руб. 18+' },
+
+        // Понедельник 02.11
+        { date: '2026-11-02', time: '20:00', age: '18+', cat: 'Концерт', title: 'Группа «Гудтаймс»', loc: 'ресторан «Максимилианс»', price: 'от 2975 рублей', desc: 'В ресторане «Максимилианс» 2 ноября в 20:00 выступит группа «Гудтаймс» с презентацией нового альбома «Неоклассика». Коллектив привезёт в Челябинск свежий материал и главные хиты. 18+ билеты от 2975 рублей' },
+
+        // Вторник 03.11
+        { date: '2026-11-03', time: '10:00', age: '6+', cat: 'Акция', title: 'Ночь искусств: «Аркаим»', loc: 'Музей города Пласт', price: 'Бесплатно/200 руб.', desc: 'Музей-заповедник «Аркаим» 3 ноября проведёт «Ночь искусств» на двух площадках: в Челябинске и в музее города Пласт. В Пласте откроется новая выставка «Новые укреплённые поселения на карте «Страны городов»» — совместный проект с Челябинским государственным университетом, посвящённый находкам эпохи бронзы. В программе — тематические лекции, мастер-классы и экскурсии. 6+' },
+        { date: '2026-11-03', time: '18:00', age: '12+', cat: 'Спектакль', title: '«Гроза» по пьесе Александра Островского', loc: 'Молодёжный театр (ул. Кирова, 116)', price: '600–1 500 руб.', desc: 'В Молодёжном театре (ул. Кирова, 116) 3 ноября в 18:00 — «Гроза» по пьесе Александра Островского. Действие разворачивается в патриархальном купеческом городе на Волге: история Катерины, оказавшейся в ловушке между долгом и чувством. Стоимость билетов — 600–1 500 руб. Пушкинская карта. 12+' },
+        { date: '2026-11-03', time: '18:00', age: '6+', cat: 'Акция', title: 'Ночь искусств: Исторический музей Южного Урала', loc: 'Исторический музей (ул. Труда)', price: '200 руб. / бесплатно', desc: 'Исторический музей Южного Урала 3 ноября с 18:00 до 22:00 откроет 12 площадок в рамках Всероссийской акции «Ночь искусств». Гостей ждут роспись чайных блюдец, мастер-класс по линогравюре, гравировка клинка от златоустовских мастеров, изготовление сувениров из уральских камней и очистка монет с реставраторами. Каждый час стартуют экскурсии по выставкам «Четыре столетия русского чая» и «Чайная история уездного города». На четвёртом этаже Восточной башни — живая музыка кавер-дуэта «Радио Мальта» и панорамный вид на вечерний Челябинск. Самостоятельный осмотр постоянных экспозиций бесплатный, единый билет на мастер-классы и лекции — 200 руб. Пушкинская карта. Предварительная запись на мастер-классы обязательна. 6+' },
+
+        // Среда 04.11
+        { date: '2026-11-04', time: '14:00', age: '0+', cat: 'Мастер-класс', title: 'Движение «Хороводы России»', loc: 'ТРК «Горки»', price: 'Вход свободный', desc: 'В ТРК «Горки» 4 ноября в 14:00 в честь Дня народного единства движение «Хороводы России» проведёт массовый хоровод с народными играми и мастер-классами: кукла-хороводница, кукла Коза-дереза, брошь-кокошник. Вход свободный.' },
+        { date: '2026-11-04', time: '15:00', age: '12+', cat: 'Акция', title: 'Ночь искусств: Музей изобразительных искусств', loc: 'пл. Революции / ул. Труда', price: 'По билетам музея', desc: 'Музей изобразительных искусств 4 ноября проведёт «Ночь искусств» сразу на двух площадках. В основном здании (пл. Революции) с 15:00 до 21:00 — сборные экскурсии по выставке «Классика французского искусства. Живопись, гравюра и скульптура 17–20 веков» из собрания Пушкинского музея, мастер-класс по линогравюре в стилистике Ренуара и лекция-концерт «Три чуда в искусстве» совместно с Челябинской государственной академической филармонией. В Картинной галерее (ул. Труда), которая вновь откроется после ремонта, в 17:10 — показ коллекции одежды VANITAS дизайнера Евгения Синицы, затем мастер-классы по скетчингу и интерьерным зарисовкам Пассажа Яушевых. Экскурсии по постоянной экспозиции — в 20:00, 21:00, 22:00 и 23:00. 12+' },
+
+        // Четверг 05.11
+        { date: '2026-11-05', time: '13:15', age: '12+', cat: 'Лекция', title: 'Лекция «Челябинск архитектурный»', loc: 'Публичная библиотека (пр. Ленина, 60)', price: '480 руб.', desc: 'В Публичной библиотеке (пр. Ленина, 60) 5 ноября с 13:15 до 14:15 в рамках проекта «Искусство вокруг нас» пройдёт лекция-презентация «Челябинск архитектурный». Спикер — профессор ЮУрГУ, член Общественной палаты РФ Наталья Балынская — расскажет о том, как купеческие окраины превратились в креативные центры, почему городские «площади» не являются таковыми и чем примечателен нынешний облик Челябинска. Стоимость — 480 руб. Пушкинская карта. 12+' },
+        { date: '2026-11-05', time: '19:00', age: '12+', cat: 'Концерт', title: 'Группа Pizza', loc: 'КРК «Таганай» (ул. Труда, 181)', price: '3 000–7 000 руб.', desc: 'В КРК «Таганай» (ул. Труда, 181) 5 ноября в 19:00 выступит группа Pizza. Коллектив под руководством Сергея Приказчикова сочетает в своём звучании фанк, регги, джаз и хип-хоп; за 15 лет записано пять студийных альбомов и сыграно более тысячи концертов в год. В программе — хиты разных лет, включая «Оружие» с более чем 70 млн просмотров. Начало в 19:00. Стоимость билетов — 3 000–7 000 руб. 12+' },
+
+        // Пятница 06.11
+        { date: '2026-11-06', time: '18:00', age: '18+', cat: 'Экскурсия', title: 'Рэп-экскурсия по маршрутам хип-хопа', loc: 'Старт от памятника Ленину (Алое поле)', price: '2 500 руб.', desc: '6 ноября в 18:00 от памятника Ленину на Алом поле стартует рэп-экскурсия по маршрутам челябинского хип-хопа конца 1990-х — начала 2000-х. Участники узнают о первых сходках, фестивале Energy, DJ «Боцмане» и творчестве TGK и ОУ74. Формат сочетает рассказ экскурсовода, аудиопроменад и живой рэп; на маршруте — мастер-класс по «тэгам» и смотровая площадка в галерее на 26-м этаже. Маршрут заканчивается у «Мегаполиса». Продолжительность — 2 часа. Участникам рекомендуется одеться тепло и взять наушники. Стоимость — 2 500 руб.' }
+    ];
+
+    const days = [
+        { date: '2026-10-31', label: 'Сб' },
+        { date: '2026-11-01', label: 'Вс' },
+        { date: '2026-11-02', label: 'Пн' },
+        { date: '2026-11-03', label: 'Вт' },
+        { date: '2026-11-04', label: 'Ср' },
+        { date: '2026-11-05', label: 'Чт' },
+        { date: '2026-11-06', label: 'Пт' }
+    ];
+
+    let currentDay = days[0].date;
+
+    function renderTabs() {
+        const nav = document.getElementById('tabsNav');
+        nav.innerHTML = days.map(d => {
+            const dateObj = new Date(d.date);
+            const dayNum = dateObj.getDate().toString().padStart(2, '0');
+            const monthNum = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+            return `
+                <button class="tab-btn ${d.date === currentDay ? 'active' : ''}" onclick="setDay('${d.date}')">
+                    <span class="day-name">${d.label}</span>
+                    <span class="date-num">${dayNum}.${monthNum}</span>
+                </button>
+            `;
+        }).join('');
+    }
+
+    function renderEvents() {
+        const container = document.getElementById('eventsList');
+        const filtered = events.filter(e => e.date === currentDay);
+        filtered.sort((a, b) => a.time.localeCompare(b.time));
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:60px; color:#999;">На этот день событий не найдено</div>';
+        } else {
+            container.innerHTML = filtered.map(e => `
+                <div class="event-card" onclick="showDetails('${e.date}', '${e.time}', '${e.title.replace(/'/g, "\\'")}')">
+                    <div class="event-header">
+                        <span class="category">${e.cat}</span>
+                        <span class="age-badge">${e.age}</span>
+                    </div>
+                    <div class="event-title">${e.title}</div>
+                    <div class="event-info-line">
+                        <span>🕒 ${e.time}</span>
+                        <span>📍 ${e.loc}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        sendHeight();
+    }
+
+    function setDay(date) {
+        currentDay = date;
+        renderTabs();
+        renderEvents();
+    }
+
+    function showDetails(date, time, title) {
+        const ev = events.find(e => e.date === date && e.time === time && e.title === title);
+        const content = document.getElementById('detailContent');
+        
+        content.innerHTML = `
+            <div class="category" style="margin-bottom:10px">${ev.cat} <span class="age-badge" style="float:right">${ev.age}</span></div>
+            <h2 style="margin-top:0; line-height:1.2;">${ev.title}</h2>
+            <div class="detail-desc">${ev.desc}</div>
+            <div class="info-grid">
+                <div class="info-box">
+                    <strong>Когда</strong>
+                    ${new Date(ev.date).toLocaleDateString('ru-RU', {day:'numeric', month:'long'})}, ${ev.time}
+                </div>
+                <div class="info-box">
+                    <strong>Где</strong>
+                    ${ev.loc}
+                </div>
+            </div>
+            <div class="price-tag">Стоимость: ${ev.price}</div>
+        `;
+        
+        document.getElementById('overlay').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        sendHeight(); 
+    }
+
+    function closeDetails() {
+        document.getElementById('overlay').style.display = 'none';
+        document.body.style.overflow = 'auto';
+        sendHeight();
+    }
+
+    function sendHeight() {
+        setTimeout(() => {
+            const height = document.getElementById('widgetRoot').offsetHeight;
+            window.parent.postMessage({ frameHeight: height }, '*');
+        }, 80);
+    }
+
+    renderTabs();
+    renderEvents();
+    window.addEventListener('resize', sendHeight);
+</script>
+
+</body>
+</html>
